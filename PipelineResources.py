@@ -54,3 +54,5 @@ def work_with_pytorch():
     dataiter = iter(trainloader)
     images, labels = dataiter.next()
     plot_images(images[:8], n_rows=2)
+    
+    
