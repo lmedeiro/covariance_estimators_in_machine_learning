@@ -420,12 +420,12 @@ if __name__ == "__main__":
         for sample_number in parser.sample_numbers:
             sample_numbers.append(int(sample_number))
     else:
-        # sample_numbers = [800, 850, 900, 950, 1000, 1100, 1200, 1300, 1400, 1500,
-        #                   2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000, 7000,
-        #                   8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000,
-        #                   16000, 17000, 18000, 19000,
-        #                   20000, 30000, 40000, 50000]
-        sample_numbers = [800, 850, 900]
+        sample_numbers = [800, 850, 900, 950, 1000, 1100, 1200, 1300, 1400, 1500,
+                          2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000, 7000,
+                          8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000,
+                          16000, 17000, 18000, 19000,
+                          20000, 30000, 40000, 50000]
+        # sample_numbers = [800, 850, 900]
     if parser.method_names is not None:
         method_names = parser.method_names
     else:
@@ -445,8 +445,8 @@ if __name__ == "__main__":
         for dimension in parser.number_of_eigen_vectors:
             number_of_eigen_vectors.append(int(dimension))
     else:
-        # number_of_eigen_vectors = [10, 20, 30, 50, 100, 200, 500, 784]
-        number_of_eigen_vectors = [100, 200, 300]
+        number_of_eigen_vectors = [100, 200, 300, 400, 500, 600, 784]
+        # number_of_eigen_vectors = [100, 200, 300]
     pca_experiment(sample_numbers, method_names, metric_names,
                    number_of_eigen_vectors=number_of_eigen_vectors,
                    n_epochs=n_epochs)
