@@ -16,13 +16,16 @@ from sklearn.metrics import confusion_matrix, \
 import pyRMT as rmt
 import seaborn as sns
 import argparse
-
+import os
 from skorch import NeuralNetClassifier
 
 CLASSES = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal',
            'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
-
-DATA_DIR = '/media/l7/data_storage1/datasets'
+LOCAL_PC = 'l7'
+if os.getlogin() == LOCAL_PC:
+    DATA_DIR = '/media/l7/data_storage1/datasets'
+else:
+    DATA_DIR = '/u/54/medeirl1/unix/dev/datasets'
 MAIN_PATH = DATA_DIR + '/afib_dataset/'
 
 def load_data(data_dir='/media/l7/data_storage1/datasets', process=True):
@@ -225,8 +228,14 @@ def train_model(x_train, y_train,
                 device=torch.device('cuda'), pca_data=False,
                 model=None, n_epochs=10, plot_results=False):
     if 'numpy' in str(type(x_train)):
-        x_train = torch.tensor(x_train).float().unsqueeze(1)
-        y_train = torch.tensor(y_train).long()
+        try:
+            x_train = torch.tensor(x_train).float().unsqueeze(1)
+            y_train = torch.tensor(y_train).long()
+        except:
+            # bp()
+            x_train = torch.tensor(np.abs(x_train)).float().unsqueeze(1)
+            y_train = torch.tensor(y_train).long()
+            print('exception')
     if model is None:
         if pca_data:
             model = NeuralNetClassifier(module=LeNet5OneD,
@@ -318,7 +327,7 @@ def load_pca_data(data, target, test_sample_size, method_names,
 def pca_experiment(sample_numbers, method_names, metric_names,
                    number_of_eigen_vectors=None, test_size=0.25,
                    n_epochs=5):
-    data, target = load_data()
+    data, target = load_data(data_dir=DATA_DIR)
     print(data.shape)
     print(target.shape)
     test_sample_size = int(0.25 * data.shape[0])
@@ -328,13 +337,15 @@ def pca_experiment(sample_numbers, method_names, metric_names,
                                                          load_stored=True)
     # x_train, x_test, y_train, y_test = setup_data_sets(data, target, test_size, random_state=random_state)
     sample_range = range(data.shape[0])
-    result_df = pd.DataFrame(columns=['sample_number', 'method_name', 'metric_name', 'value'])
+    result_df = pd.DataFrame(columns=['sample_number', 'method_name',
+                                      'metric_name', 'number_of_eigen_vectors', 'value'])
     for sample_number in sample_numbers:
         train_indexes = np.random.choice(sample_range, size=sample_number, replace=False)
         train_data = data[train_indexes, :]
         train_target = target[train_indexes]
         for method_name in method_names:
             if number_of_eigen_vectors is None:
+                dimension = 784
                 if method_name == 'raw':
                     # print('implement raw method')
                     raw_train_data = train_data.reshape(train_data.shape[0], 28, 28)
@@ -346,7 +357,7 @@ def pca_experiment(sample_numbers, method_names, metric_names,
                     #                                                       test_target,
                     #                                                       plot_results=False)
                 else:
-                    pca_train_data = compute_pca(train_data, number_of_eigen_vectors=None,
+                    pca_train_data = compute_pca(train_data,
                                                  method_name=method_name)
                     # pca_train_data = train_data.reshape(pca_train_data.shape[0], 28, 28)
                     model, pred_train, classification_results = train_model(pca_train_data, train_target,
@@ -362,9 +373,26 @@ def pca_experiment(sample_numbers, method_names, metric_names,
                     index = result_df.index.size
                     result_df.loc[index] = 0
                     metric_value = classification_results[metric]
-                    result_df.loc[index] = [sample_number, method_name, metric, metric_value]
+                    result_df.loc[index] = [sample_number, method_name, metric, dimension, metric_value]
             else:
-                raise NotImplementedError
+                if method_name == 'raw':
+                    pass
+                else:
+                    for dimension in number_of_eigen_vectors:
+                        pca_train_data = compute_pca(train_data, number_of_eigen_vectors=dimension,
+                                                     method_name=method_name)
+                        # pca_train_data = train_data.reshape(pca_train_data.shape[0], 28, 28)
+                        model, pred_train, classification_results = train_model(pca_train_data, train_target,
+                                                                                model=None, n_epochs=n_epochs,
+                                                                                plot_results=False, pca_data=True)
+                        for metric in metric_names:
+                            if method_name == 'raw':
+                                pass
+                            else:
+                                index = result_df.index.size
+                                result_df.loc[index] = 0
+                                metric_value = classification_results[metric]
+                                result_df.loc[index] = [sample_number, method_name, metric, dimension, metric_value]
         result_df.to_pickle(MAIN_PATH + 'pca_experiment_result_df.pckl')
         print('finished sample_number: {}'.format(sample_number))
 
@@ -379,6 +407,8 @@ def parse_args(args=sys.argv[1:]):
                         help="Metric values to be stored and plotted")
     parser.add_argument("--sample_numbers", nargs='*', default=None,
                         help="Training Sample Numbers")
+    parser.add_argument("--number_of_eigen_vectors", nargs='*', default=None,
+                        help="List with number of eigen vectors to be used")
     parser.add_argument("--n_epochs", type=int, help="Number of epochs", default=5)
     return parser.parse_args(args)
 
@@ -390,8 +420,12 @@ if __name__ == "__main__":
         for sample_number in parser.sample_numbers:
             sample_numbers.append(int(sample_number))
     else:
-        sample_numbers = [800, 900, 1000, 2000, 3000, 4000, 5000, 10000,
-                          20000, 30000, 40000, 50000]
+        # sample_numbers = [800, 850, 900, 950, 1000, 1100, 1200, 1300, 1400, 1500,
+        #                   2000, 2500, 3000, 3500, 4000, 4500, 5000, 6000, 7000,
+        #                   8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000,
+        #                   16000, 17000, 18000, 19000,
+        #                   20000, 30000, 40000, 50000]
+        sample_numbers = [800, 850, 900]
     if parser.method_names is not None:
         method_names = parser.method_names
     else:
@@ -406,4 +440,13 @@ if __name__ == "__main__":
         n_epochs = parser.n_epochs
     else:
         n_epochs = 5
-    pca_experiment(sample_numbers, method_names, metric_names, n_epochs=n_epochs)
+    if parser.number_of_eigen_vectors is not None:
+        number_of_eigen_vectors = []  # args.assets
+        for dimension in parser.number_of_eigen_vectors:
+            number_of_eigen_vectors.append(int(dimension))
+    else:
+        # number_of_eigen_vectors = [10, 20, 30, 50, 100, 200, 500, 784]
+        number_of_eigen_vectors = [100, 200, 300]
+    pca_experiment(sample_numbers, method_names, metric_names,
+                   number_of_eigen_vectors=number_of_eigen_vectors,
+                   n_epochs=n_epochs)
