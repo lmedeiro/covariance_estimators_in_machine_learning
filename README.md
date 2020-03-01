@@ -1,8 +1,14 @@
 # Analyzing Estimators for Deep CNN Models
 
 ## Abstract
-The goal of this work was to evaluate the performance of three different covariance matrix estimators in the context of Principal Component Analysis (PCA), Convolutional Neural Networks (CNNs), and classification. Namely, the different estimators were used to compute PCA features from images in the Fashion-MNIST dataset. These features were then fed to a simple CNN for a classification exercise. The different estimators, Sample Covariance, Ledoit-Wolf Linear Shrinkage, and Rotationally Invariant estimators are evaluated on the basis of the final classification performance.  
-
+The goal of this work was to evaluate the performance of three different covariance matrix
+estimators in the context of Principal Component Analysis (PCA), Convolutional Neural Networks
+(CNNs), and classification. Namely, the different estimators were used to compute PCA features
+from images in the Fashion-MNIST dataset. These features were then fed to a simple CNN for a
+classification exercise. The different estimators, Sample Covariance, Ledoit-Wolf Linear
+Shrinkage, and Rotationally Invariant estimators are evaluated on the basis of the final
+classification performance. Results demonstrated that RIE produced the better
+classification performance in the contect of the dataset and model used in this experiment. 
 
 ## Repo Description
 
@@ -17,3 +23,7 @@ The goal of this work was to evaluate the performance of three different covaria
 
 [Pre-processing resources](./PipelineResources.py)
     Contains functions that are used in the pre-processing
+
+[Report Folder](./report)
+    Contains the report produced by this research experiment. 
+
